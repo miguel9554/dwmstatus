@@ -198,6 +198,14 @@ execscript(char *cmd)
 	return smprintf("%s", retval);
 }
 
+char *
+getdiskfree(char *path)
+{
+    char *command = smprintf("df -h %s | awk 'NR==2 {print $6 \": \" $5}'", path);
+
+    return execscript(command);
+}
+
 int
 main(void)
 {
@@ -209,31 +217,43 @@ main(void)
 	char *tmbln;
 	char *t0;
 	char *t1;
+	char *t2;
 	char *kbmap;
-	char *surfs;
+	// char *surfs;
+    char *vol;
+    char *ram;
+    char *diskfree_data;
+    char *diskfree_data_fast;
+    char *diskfree_home;
 
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
 		return 1;
 	}
 
-	for (;;sleep(30)) {
+	for (;;sleep(1)) {
 		avgs = loadavg();
 		bat = getbattery("/sys/class/power_supply/BAT0");
 		tmar = mktimes("%H:%M", tzargentina);
 		tmutc = mktimes("%H:%M", tzutc);
 		tmbln = mktimes("KW %W %a %d %b %H:%M %Z %Y", tzberlin);
 		kbmap = execscript("setxkbmap -query | grep layout | cut -d':' -f 2- | tr -d ' '");
-		surfs = execscript("surf-status");
-		t0 = gettemperature("/sys/devices/virtual/thermal/thermal_zone0", "temp");
-		t1 = gettemperature("/sys/devices/virtual/thermal/thermal_zone1", "temp");
+		// surfs = execscript("surf-status");
+		t0 = gettemperature("/sys/class/hwmon/hwmon0", "temp1_input");
+		t1 = gettemperature("/sys/class/hwmon/hwmon1", "temp1_input");
+		t2 = gettemperature("/sys/class/hwmon/hwmon2", "temp1_input");
+        vol = execscript("amixer get Master | tail -1 | sed 's/.*\\[\\([0-9]*%\\)\\].*/\\1/'");
+        ram = execscript("echo \"$(free -h | awk 'NR==2 {print $3}')B/$(free -h | awk 'NR==2 {print $2}')B\"");
+        diskfree_data = getdiskfree("/dev/sda1");
+        diskfree_home = getdiskfree("/dev/nvme0n1p3");
+        diskfree_data_fast = getdiskfree("/dev/nvme0n1p4");
 
-		status = smprintf("S:%s K:%s T:%s|%s L:%s B:%s A:%s U:%s %s",
-				surfs, kbmap, t0, t1, avgs, bat, tmar, tmutc,
-				tmbln);
+		status = smprintf("%s %s %s VOL: %s Temp: %s|%s|%s Load:%s RAM: %s Time:%s",
+				// surfs,
+                diskfree_home, diskfree_data, diskfree_data_fast, vol, t0, t1, t2, avgs, ram, tmar);
 		setstatus(status);
 
-		free(surfs);
+		// free(surfs);
 		free(kbmap);
 		free(t0);
 		free(t1);
