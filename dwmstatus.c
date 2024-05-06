@@ -225,6 +225,7 @@ main(void)
     char *diskfree_data;
     char *diskfree_data_fast;
     char *diskfree_home;
+    char *diskfree_hdd;
 
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
@@ -234,7 +235,7 @@ main(void)
 	for (;;sleep(1)) {
 		avgs = loadavg();
 		bat = getbattery("/sys/class/power_supply/BAT0");
-		tmar = mktimes("%H:%M", tzargentina);
+        tmar = mktimes("%d/%m/%Y %H:%M", tzargentina);
 		tmutc = mktimes("%H:%M", tzutc);
 		tmbln = mktimes("KW %W %a %d %b %H:%M %Z %Y", tzberlin);
 		kbmap = execscript("setxkbmap -query | grep layout | cut -d':' -f 2- | tr -d ' '");
@@ -247,10 +248,11 @@ main(void)
         diskfree_data = getdiskfree("/dev/sda1");
         diskfree_home = getdiskfree("/dev/nvme0n1p3");
         diskfree_data_fast = getdiskfree("/dev/nvme0n1p4");
+        diskfree_hdd = getdiskfree("/dev/sdb1");
 
-		status = smprintf("%s %s %s VOL: %s Temp: %s|%s|%s Load:%s RAM: %s Time:%s",
+		status = smprintf("%s %s %s %s VOL: %s Temp: %s|%s|%s Load:%s RAM: %s Time:%s",
 				// surfs,
-                diskfree_home, diskfree_data, diskfree_data_fast, vol, t0, t1, t2, avgs, ram, tmar);
+                diskfree_hdd, diskfree_home, diskfree_data, diskfree_data_fast, vol, t0, t1, t2, avgs, ram, tmar);
 		setstatus(status);
 
 		// free(surfs);
