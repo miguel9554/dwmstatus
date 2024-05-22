@@ -226,6 +226,7 @@ main(void)
     char *diskfree_data_fast;
     char *diskfree_home;
     char *diskfree_hdd;
+    char *diskfree_ssd;
 
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
@@ -245,14 +246,15 @@ main(void)
 		t2 = gettemperature("/sys/class/hwmon/hwmon2", "temp1_input");
         vol = execscript("amixer get Master | tail -1 | sed 's/.*\\[\\([0-9]*%\\)\\].*/\\1/'");
         ram = execscript("echo \"$(free -h | awk 'NR==2 {print $3}')B/$(free -h | awk 'NR==2 {print $2}')B\"");
-        diskfree_data = getdiskfree("/dev/sda1");
         diskfree_home = getdiskfree("/dev/nvme0n1p3");
+        diskfree_data = getdiskfree("/dev/sdb1");
         diskfree_data_fast = getdiskfree("/dev/nvme0n1p4");
-        diskfree_hdd = getdiskfree("/dev/sdb1");
+        diskfree_ssd = getdiskfree("/dev/sdc1");
+        diskfree_hdd = getdiskfree("/dev/sda1");
 
-		status = smprintf("%s %s %s %s VOL: %s Temp: %s|%s|%s Load:%s RAM: %s Time:%s",
+		status = smprintf("%s %s %s %s %s VOL: %s Temp: %s|%s|%s Load:%s RAM: %s %s",
 				// surfs,
-                diskfree_hdd, diskfree_home, diskfree_data, diskfree_data_fast, vol, t0, t1, t2, avgs, ram, tmar);
+                diskfree_home, diskfree_data, diskfree_data_fast, diskfree_ssd, diskfree_hdd, vol, t0, t1, t2, avgs, ram, tmar);
 		setstatus(status);
 
 		// free(surfs);
