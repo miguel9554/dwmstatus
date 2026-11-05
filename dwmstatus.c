@@ -170,6 +170,26 @@ execscript(char *cmd)
 	return smprintf("%s", retval);
 }
 
+int
+getbatterypct(char *base)
+{
+	char *co;
+	int pct = -1;
+
+	co = readfile(base, "capacity");
+	if (co != NULL) {
+		pct = atoi(co);
+		free(co);
+	}
+	return pct;
+}
+
+char *
+getbrightness(void)
+{
+	return execscript("light -G | cut -d'.' -f1");
+}
+
 char *
 getdiskfree(char *path)
 {
@@ -196,6 +216,8 @@ main(void)
     char *ram;
     char *diskfree_home;
     char *diskfree_root;
+    char *bright;
+    int batpct;
 
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
@@ -217,13 +239,17 @@ main(void)
         ram = execscript("echo \"$(free -h | awk 'NR==2 {print $3}')B/$(free -h | awk 'NR==2 {print $2}')B\"");
         diskfree_home = getdiskfree("/dev/nvme0n1p4");
         diskfree_root = getdiskfree("/dev/nvme0n1p3");
+        bright = getbrightness();
+        batpct = getbatterypct("/sys/class/power_supply/BAT0");
 
-		status = smprintf("%s | %s VOL: %s | BAT: %s | Load:%s | RAM: %s | %s",
-				// surfs,
-                diskfree_home, diskfree_root, vol, bat, avgs, ram, tmar);
+		if (batpct >= 0 && batpct < 20)
+			status = smprintf("%s | %s VOL: %s | ^b#ff0000^BAT: %s^d^ | BRI: %s%% | Load:%s | RAM: %s | %s",
+					diskfree_home, diskfree_root, vol, bat, bright, avgs, ram, tmar);
+		else
+			status = smprintf("%s | %s VOL: %s | BAT: %s | BRI: %s%% | Load:%s | RAM: %s | %s",
+					diskfree_home, diskfree_root, vol, bat, bright, avgs, ram, tmar);
 		setstatus(status);
 
-		// free(surfs);
 		free(kbmap);
 		free(t0);
 		free(t1);
@@ -232,6 +258,7 @@ main(void)
 		free(tmar);
 		free(tmutc);
 		free(tmbln);
+		free(bright);
 		free(status);
 	}
 
